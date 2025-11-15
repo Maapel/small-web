@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Small – The AI-Native IDE</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.390.0/dist/umd/lucide.js"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #020617; /* slate-950 */
+      color: #cbd5e1; /* slate-300 */
+    }
+
+    .font-mono {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
+    }
+
+    .hero-grid {
+      background-image:
+        linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .btn-glow {
+      box-shadow: 0 0 15px 0 rgba(59, 130, 246, 0.45);
+    }
+
+    .btn-glow:hover {
+      box-shadow: 0 0 25px 0 rgba(59, 130, 246, 0.85);
+    }
+
+    .code-scroll::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .code-scroll::-webkit-scrollbar-track {
+      background: #020617;
+    }
+
+    .code-scroll::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+
+    .code-scroll::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* --- 3D Flip Card Styles --- */
+    .perspective {
+      perspective: 1500px;
+    }
+
+    .flip-card {
+      transform-style: preserve-3d;
+      transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .flip-card-front,
+    .flip-card-back {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .flip-card-back {
+      transform: rotateY(180deg);
+    }
+
+    .is-flipped {
+      transform: rotateY(180deg);
+    }
+
+    /* Node styles rewritten without @apply so it works with CDN Tailwind */
+    .node-wrapper {
+      position: relative;
+      transition: all 0.7s ease-in-out;
+      z-index: 10;
+    }
+
+    .node-base {
+      background-color: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(16px);
+      border-radius: 0.5rem;
+      border-width: 1px;
+      border-style: solid;
+      border-color: #475569;
+      box-shadow: 0 10px 40px rgba(15, 23, 42, 0.8);
+      min-width: 200px;
+      overflow: hidden;
+    }
+
+    .node-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      border-bottom-width: 1px;
+      border-style: solid;
+      border-color: inherit;
+    }
+
+    .node-icon {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+    }
+
+    .node-label {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #f9fafb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .node-body {
+      display: flex;
+      justify-content: space-between;
+      min-height: 40px;
+    }
+
+    .node-ports-in {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .node-ports-out {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .node-port-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 1.75rem;
+      padding-inline: 0.75rem;
+    }
+
+    .node-port-handle {
+      position: absolute;
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 999px;
+      border-width: 2px;
+      background-color: #020617;
+      border-color: #64748b;
+      z-index: 10;
+    }
+
+    .node-port-handle.in {
+      left: -6px;
+    }
+
+    .node-port-handle.out {
+      right: -6px;
+    }
+
+    .node-port-label {
+      font-size: 0.75rem;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
+      color: #94a3b8;
+      padding-left: 0.5rem;
+    }
+
+    .node-port-label.out {
+      color: #e5e7eb;
+      padding-left: 0;
+      padding-right: 1.25rem;
+    }
+
+    .node-color-blue {
+      border-color: #3b82f6;
+    }
+
+    .node-color-blue .node-header {
+      border-color: #3b82f6;
+    }
+
+    .node-color-blue .node-icon {
+      color: #60a5fa;
+    }
+
+    .node-color-orange {
+      border-color: #f97316;
+    }
+
+    .node-color-orange .node-header {
+      border-color: #f97316;
+    }
+
+    .node-color-orange .node-icon {
+      color: #fdba74;
+    }
+
+    .node-color-green {
+      border-color: #22c55e;
+    }
+
+    .node-color-green .node-header {
+      border-color: #22c55e;
+    }
+
+    .node-color-green .node-icon {
+      color: #4ade80;
+    }
+
+    .node-color-slate {
+      border-color: #475569;
+    }
+
+    .node-color-slate .node-header {
+      border-color: #475569;
+    }
+
+    .node-color-slate .node-icon {
+      color: #64748b;
+    }
+
+    /*
+      REMOVED: Media queries for #features height.
+      Setting height: 'auto' or '220vh' breaks the
+      scroll-based animation, which relies on the
+      parent (#features) having a large, fixed scroll
+      height (300vh) to move the 'sticky' panel against.
+      The sticky panel itself is 'h-screen' and will
+      behave correctly on all screen sizes.
+    */
+  </style>
+</head>
+<body class="antialiased">
+
+  <!-- Header -->
+  <header
+    class="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800"
+    aria-label="Main navigation"
+  >
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="#top" class="text-2xl font-bold text-white tracking-tighter">small</a>
+        <a
+          href="#waitlist"
+          class="text-sm font-medium bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+        >
+          Join waitlist
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main id="top">
+
+    <!-- Section 1: Hero -->
+    <section
+      class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden py-32 md:py-40"
+      aria-labelledby="hero-heading"
+    >
+      <div class="absolute inset-0 hero-grid opacity-60 pointer-events-none"></div>
+      <div
+        class="pointer-events-none absolute inset-x-0 top-0 h-[600px] bg-gradient-to-br from-blue-600/25 via-transparent to-transparent -translate-x-1/3 -translate-y-1/2 blur-[100px]"
+      ></div>
+      <div class="absolute inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950/40 z-10"></div>
+
+      <div class="relative z-20 text-center max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Headline container -->
+        <div class="relative h-24 flex items-center justify-center">
+          <h1
+            id="headline-problem"
+            class="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight transition-all duration-500"
+          >
+            Tired of AI-spitted spaghetti code?
+          </h1>
+          <h1
+            id="headline-solution"
+            class="absolute inset-x-0 text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-300 tracking-tight transition-all duration-500 opacity-0 translate-y-4"
+          >
+            Understand it. Instantly.
+          </h1>
+        </div>
+
+        <p class="mt-4 text-lg md:text-2xl text-slate-400 max-w-3xl mx-auto">
+          <strong class="text-white">Small</strong> is the hybrid IDE that flips your perspective.
+          See the <strong class="text-white">architecture</strong>, not just the
+          <strong class="text-white">syntax</strong>.
+        </p>
+      </div>
+
+      <!-- Flip Card -->
+      <div class="relative z-20 w-full max-w-4xl xl:max-w-5xl mx-auto mt-12 px-4 perspective">
+        <div class="w-full h-[500px] flip-card" id="flip-card" aria-live="polite">
+          <!-- Front: Code -->
+          <div
+            class="absolute w-full h-full flip-card-front bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-xl overflow-hidden shadow-2xl"
+          >
+            <div class="px-4 py-2 border-b border-slate-800 flex items-center gap-2">
+              <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+              <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+              <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span class="ml-auto font-mono text-xs text-slate-500">demo.py</span>
+            </div>
+            <pre class="p-6 text-sm code-scroll h-full overflow-y-auto pb-16"><code class="font-mono">
+<span class="text-purple-400">import</span> requests
+
+<span class="text-purple-400">def</span> <span class="text-blue-400">get_user</span>(uid):
+    <span class="text-gray-500"># Fetches user data</span>
+    r = requests.get(f"https://api.example.com/users/{uid}")
+    <span class="text-purple-400">if</span> r.status_code == 200:
+        <span class="text-purple-400">return</span> r.json()
+
+<span class="text-purple-400">def</span> <span class="text-blue-400">build_message</span>(user):
+    <span class="text-gray-500"># AI added this function...</span>
+    <span class="text-purple-400">if</span> user[<span class="text-green-400">"admin"</span>]:
+        <span class="text-purple-400">return</span> f"Welcome, {user[<span class="text-green-400">'name'</span>]}!"
+    <span class="text-purple-400">return</span> f"Hello, {user[<span class="text-green-400">'name'</span>]}."
+
+<span class="text-gray-500"># Original flow</span>
+user = <span class="text-blue-400">get_user</span>(1)
+<span class="text-purple-400">if</span> user:
+    <span class="text-gray-500"># How to replace this line?</span>
+    <span class="text-blue-400">print</span>(f"Hello, {user[<span class="text-green-400">'name'</span>]}")
+
+<span class="text-gray-500"># AI-generated... but disconnected</span>
+message = <span class="text-blue-400">build_message</span>(user)
+<span class="text-blue-400">print</span>(message)
+</code></pre>
+          </div>
+
+          <!-- Back: Graph -->
+          <div
+            class="absolute w-full h-full flip-card-back bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-xl overflow-hidden shadow-2xl p-6 hero-grid"
+          >
+            <!-- SVG wires -->
+            <svg
+              class="absolute inset-0 w-full h-full z-0"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              id="svg-wires"
+            ></svg>
+
+            <!-- Nodes -->
+            <div
+              id="node-container-hero"
+              class="relative w-full h-full z-10 grid grid-cols-5 grid-rows-3 gap-y-8 gap-x-8 items-center"
+            >
+              <!-- Row 1 -->
+              <div id="node-requests" class="node-wrapper" style="grid-column:1;grid-row:1;justify-self:center;">
+                <div class="node-base node-color-slate">
+                  <div class="node-header node-color-slate">
+                    <span data-lucide="file-text" class="node-icon"></span>
+                    <span class="node-label">import requests</span>
+                  </div>
+                  <div class="node-body">
+                    <div class="node-ports-out">
+                      <div class="node-port-container">
+                        <div class="node-port-handle out" data-port-name="out"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="node-def-get-user" class="node-wrapper" style="grid-column:2 / span 2;grid-row:1;justify-self:center;">
+                <div class="node-base node-color-blue">
+                  <div class="node-header node-color-blue">
+                    <span data-lucide="box" class="node-icon"></span>
+                    <span class="node-label">def get_user</span>
+                  </div>
+                  <div class="node-body">
+                    <div class="node-ports-out">
+                      <div class="node-port-container">
+                        <div class="node-port-handle out" data-port-name="out"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="node-def-build-msg" class="node-wrapper" style="grid-column:4 / span 2;grid-row:1;justify-self:center;">
+                <div class="node-base node-color-blue">
+                  <div class="node-header node-color-blue">
+                    <span data-lucide="box" class="node-icon"></span>
+                    <span class="node-label">def build_message</span>
+                  </div>
+                  <div class="node-body">
+                    <div class="node-ports-out">
+                      <div class="node-port-container">
+                        <div class="node-port-handle out" data-port-name="out"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 2 -->
+              <div id="node-literal-1" class="node-wrapper" style="grid-column:1;grid-row:2;justify-self:center;">
+                <div class="node-base node-color-slate" style="min-width:80px;">
+                  <div class="node-header node-color-slate justify-center">
+                    <span class="node-label">1</span>
+                  </div>
+                  <div class="node-body">
+                    <div class="node-ports-out">
+                      <div class="node-port-container">
+                        <span class="node-port-label out">value</span>
+                        <div class="node-port-handle out"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="node-call-get-user" class="node-wrapper" style="grid-column:2;grid-row:2;justify-self:center;">
+                <div class="node-base node-color-orange">
+                  <div class="node-header node-color-orange">
+                    <span data-lucide="activity" class="node-icon"></span>
+                    <span class="node-label">get_user</span>
+                  </div>
+                  <div class="node-body">
+                    <div class="node-ports-in">
+                      <div class="node-port-container">
+                        <div class="node-port-handle in"></div>
+                        <span class="node-port-label">user_id</span>
+                      </div>
+                    </div>
+                    <div class="node-ports-out">
+                      <div class="node-port-container">
+                        <span class="node-port-label out">return</span>
+                        <div class="node-port-handle out"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="node-var-user" class="node-wrapper" style="grid-column:3;grid-row:2;justify-self:center;">
+                <div class="node-base node-color-green">
+                  <div class="node-header node-color-green">
+                    <span data-lucide="database" class="node-icon"></span>
+                    <span class="node-label">user</span>
+                  </div>
+                  <div class="node-body">
+                    <div class="node-ports-in">
+                      <div class="node-port-container">
+                        <div class="node-port-handle in"></div>
+                        <span class="node-port-label">input</span>
+                      </div>
+                    </div>
+                    <div class="node-ports-out">
+                      <div class="node-port-container">
+                        <span class="node-port-label out">value</span>
+                        <div class="node-port-handle out"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="node-call-build-msg" class="node-wrapper" style="grid-column:4;grid-row:2;justify-self:center;">
+                <div class="node-base node-color-orange">
+                  <div class="node-header node-color-orange">
+                    <span data-lucide="activity" class="node-icon"></span>
+                    <span class="node-label">build_message</span>
+                  </div>
+                  <div class="node-body">
+                    <div class="node-ports-in">
+                      <div class="node-port-container">
+                        <div class="node-port-handle in"></div>
+                        <span class="node-port-label">user_data</span>
+                      </div>
+                    </div>
+                    <div class="node-ports-out">
+                      <div class="node-port-container">
+                        <span class="node-port-label out">return</span>
+                        <div class="node-port-handle out"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="node-call-print" class="node-wrapper" style="grid-column:5;grid-row:2;justify-self:center;">
+                <div class="node-base node-color-orange">
+                  <div class="node-header node-color-orange">
+                    <span data-lucide="activity" class="node-icon"></span>
+                    <span class="node-label">print</span>
+                  </div>
+                  <div class="node-body">
+                    <div class="node-ports-in">
+                      <div class="node-port-container">
+                        <div class="node-port-handle in"></div>
+                        <span class="node-port-label">arg0</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Flip Button -->
+        <div class="relative z-30 mt-8 flex items-center justify-center">
+          <button
+            id="flip-button"
+            type="button"
+            class="bg-slate-800/90 text-slate-200 px-6 py-3 rounded-lg text-base font-semibold hover:bg-slate-700 transition-colors flex items-center gap-2 mx-auto"
+            aria-pressed="false"
+          >
+            <span data-lucide="refresh-cw" class="w-4 h-4"></span>
+            <span id="flip-button-text">Flip to graph view</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: How It Works -->
+    <section id="features" class="relative" style="height:300vh;">
+      <div
+        class="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-slate-950 border-t border-slate-800"
+      >
+        <!-- "IDE" UI -->
+        <div
+          class="w-full max-w-5xl h-[500px] flex flex-col lg:flex-row bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-xl shadow-2xl overflow-hidden"
+        >
+          <!-- Story Panel -->
+          <aside class="w-full lg:w-1/3 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800">
+            <div class="p-6 flex-1 space-y-4 overflow-y-auto code-scroll">
+              <h2 id="story-title" class="text-2xl font-bold text-white transition-all duration-300">...</h2>
+              <p id="story-body" class="text-slate-400 transition-all duration-300 leading-relaxed">...</p>
+            </div>
+            <div class="p-4 border-t border-slate-800">
+              <div class="text-sm text-slate-500 font-mono flex items-center justify-center gap-2">
+                <span data-lucide="arrow-down-narrow-wide" class="w-4 h-4"></span>
+                <span>Scroll to continue</span>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Canvas Panel -->
+          <section
+            class="w-full lg:w-2/3 relative hero-grid p-6"
+            id="story-canvas"
+            aria-label="Dataflow canvas"
+          >
+            <svg
+              id="story-svg"
+              class="absolute inset-0 w-full h-full z-0"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            ></svg>
+            <div
+              id="story-node-container"
+              class="relative w-full h-full z-10 grid grid-cols-3 items-center gap-x-8 gap-y-8"
+            ></div>
+
+            <!-- Floating Prompt -->
+            <div
+              id="story-prompt"
+              class="absolute bg-blue-600/20 border border-blue-500 px-3 py-2 rounded-lg shadow-lg text-xs sm:text-sm z-20 pointer-events-none"
+              style="opacity:0;transition:all .5s ease;left:50%;top:75%;transform:translateX(-50%);"
+            >
+              <span class="font-mono text-blue-300">"Add the build_message step here"</span>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Final CTA -->
+    <section
+      id="waitlist"
+      class="py-24 sm:py-32 text-center bg-slate-900/70 border-t border-slate-800"
+      aria-labelledby="waitlist-heading"
+    >
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 id="waitlist-heading" class="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
+          Stop vibe coding. Start shipping.
+        </h2>
+        <p class="mt-6 text-lg text-slate-400">
+          We’re launching a private beta soon. Join the waitlist to get early access and help shape the future of development.
+        </p>
+        <form
+          class="mt-10 flex flex-col sm:flex-row gap-4 max-w-md mx-auto"
+          action="#"
+          method="post"
+        >
+          <label class="sr-only" for="email">Email address</label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            required
+            autocomplete="email"
+            class="flex-1 bg-slate-900 border border-slate-700 text-slate-100 rounded-lg px-4 py-3 text-lg placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="engineer@company.com"
+          />
+          <button
+            type="submit"
+            class="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-500 btn-glow transition-all"
+          >
+            Request access
+          </button>
+        </form>
+        <p class="mt-4 text-xs text-slate-500">
+          No spam. Just launch updates and a fast path into the beta.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <span class="text-lg font-bold text-white tracking-tighter">small</span>
+      <p class="text-xs sm:text-sm text-slate-500">© 2025 Small AI. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Render Lucide icons
+      lucide.createIcons();
+
+      // --- 1. Hero flip logic ---
+      const flipCard = document.getElementById("flip-card");
+      const flipButton = document.getElementById("flip-button");
+      const flipButtonText = document.getElementById("flip-button-text");
+      const headlineProblem = document.getElementById("headline-problem");
+      const headlineSolution = document.getElementById("headline-solution");
+      const svgHeroWires = document.getElementById("svg-wires");
+
+      let isFlipped = false;
+
+      function getPortPos(container, nodeId, portSide, portLabel) {
+        const el = document.getElementById(nodeId);
+        const svgRect = container.getBoundingClientRect();
+        if (!el || !svgRect || svgRect.width === 0) return null;
+
+        const rect = el.getBoundingClientRect();
+
+        let portEl = null;
+        if (portLabel) {
+          const portLabels = el.querySelectorAll(
+            ".node-port-label" + (portSide === "in" ? "" : ".out")
+          );
+          portLabels.forEach((labelEl) => {
+            if (labelEl.textContent.trim() === portLabel) {
+              portEl = labelEl.previousElementSibling || labelEl.nextElementSibling;
+            }
+          });
+        }
+
+        if (!portEl) {
+          portEl = el.querySelector(".node-port-handle." + portSide);
+        }
+
+        if (portEl) {
+          const portRect = portEl.getBoundingClientRect();
+          return {
+            x: portRect.left + portRect.width / 2 - svgRect.left,
+            y: portRect.top + portRect.height / 2 - svgRect.top
+          };
+        }
+
+        return {
+          x: (portSide === "in" ? rect.left : rect.right) - svgRect.left,
+          y: rect.top + rect.height / 2 - svgRect.top
+        };
+      }
+
+      function drawWires(svgContainer, wireDefs) {
+        if (!svgContainer) return;
+        svgContainer.innerHTML = "";
+
+        wireDefs.forEach((wire) => {
+          const p1 = getPortPos(svgContainer, wire.from, wire.fromPort || "out", wire.fromLabel);
+          const p2 = getPortPos(svgContainer, wire.to, wire.toPort || "in", wire.toLabel);
+
+          if (!p1 || !p2) {
+            console.warn("Could not draw wire:", wire.from, "->", wire.to);
+            return;
+          }
+
+          const midX = p1.x + (p2.x - p1.x) / 2;
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute(
+            "d",
+            "M " +
+              p1.x +
+              " " +
+              p1.y +
+              " C " +
+              midX +
+              " " +
+              p1.y +
+              ", " +
+              midX +
+              " " +
+              p2.y +
+              ", " +
+              p2.x +
+              " " +
+              p2.y
+          );
+          path.setAttribute("stroke", wire.color || "#64748b");
+          path.setAttribute("stroke-width", "2");
+          path.setAttribute("fill", "none");
+          path.style.opacity = "0";
+          path.style.transition = "opacity 0.3s";
+          svgContainer.appendChild(path);
+          setTimeout(() => {
+            path.style.opacity = "1";
+          }, 40);
+        });
+      }
+
+      const heroWireDefs = [
+        { from: "node-literal-1", fromLabel: "value", to: "node-call-get-user", toLabel: "user_id" },
+        { from: "node-call-get-user", fromLabel: "return", to: "node-var-user", toLabel: "input" },
+        { from: "node-var-user", fromLabel: "value", to: "node-call-build-msg", toLabel: "user_data" },
+        { from: "node-call-build-msg", fromLabel: "return", to: "node-call-print", toLabel: "arg0" },
+        { from: "node-requests", to: "node-call-get-user", toLabel: "user_id" },
+        { from: "node-def-get-user", to: "node-call-get-user", toLabel: "user_id" },
+        { from: "node-def-build-msg", to: "node-call-build-msg", toLabel: "user_data" }
+      ];
+
+      flipButton.addEventListener("click", () => {
+        isFlipped = !isFlipped;
+        flipCard.classList.toggle("is-flipped");
+        flipButton.setAttribute("aria-pressed", String(isFlipped));
+
+        if (isFlipped) {
+          flipButtonText.textContent = "Flip to code view";
+          headlineProblem.style.opacity = "0";
+          headlineProblem.style.transform = "translateY(1rem)";
+          headlineSolution.style.opacity = "1";
+          headlineSolution.style.transform = "translateY(0)";
+
+          requestAnimationFrame(() => {
+            setTimeout(() => drawWires(svgHeroWires, heroWireDefs), 60);
+          });
+        } else {
+          flipButtonText.textContent = "Flip to graph view";
+          headlineProblem.style.opacity = "1";
+          headlineProblem.style.transform = "translateY(0)";
+          headlineSolution.style.opacity = "0";
+          headlineSolution.style.transform = "translateY(-1rem)";
+          svgHeroWires.innerHTML = "";
+        }
+      });
+
+      // --- 2. Scroll story logic ---
+      const featuresSection = document.getElementById("features");
+      const storyTitle = document.getElementById("story-title");
+      const storyBody = document.getElementById("story-body");
+      const storyNodeContainer = document.getElementById("story-node-container");
+      const storySvg = document.getElementById("story-svg");
+      const storyPrompt = document.getElementById("story-prompt");
+
+      const storyNodes = {
+        user: {
+          id: "user",
+          x: 1,
+          y: 1,
+          label: "user",
+          color: "node-color-green",
+          icon: "database",
+          portsIn: ["input"],
+          portsOut: ["value"]
+        },
+        print: {
+          id: "print",
+          x: 3,
+          y: 1,
+          label: "print",
+          color: "node-color-orange",
+          icon: "activity",
+          portsIn: ["arg0"]
+        },
+        build_msg: {
+          id: "build_msg",
+          x: 2,
+          y: 1,
+          label: "build_message",
+          color: "node-color-blue",
+          icon: "box",
+          portsIn: ["user_data"],
+          portsOut: ["return"]
+        }
+      };
+
+      const storyWireDefs = {
+        w1: [
+          {
+            from: "story-node-user",
+            fromLabel: "value",
+            to: "story-node-print",
+            toLabel: "arg0"
+          }
+        ],
+        w_new: [
+          {
+            from: "story-node-user",
+            fromLabel: "value",
+            to: "story-node-build_msg",
+            toLabel: "user_data"
+          },
+          {
+            from: "story-node-build_msg",
+            fromLabel: "return",
+            to: "story-node-print",
+            toLabel: "arg0"
+          }
+        ]
+      };
+
+      function createStoryNode(node) {
+        const el = document.createElement("div");
+        el.id = "story-node-" + node.id;
+        el.className = "node-wrapper";
+        el.style.gridColumn = node.x;
+        el.style.gridRow = node.y;
+        el.style.justifySelf = "center";
+        el.style.opacity = "0";
+
+        const portsInHTML = (node.portsIn || [])
+          .map(
+            (port) =>
+              '<div class="node-port-container">' +
+              '<div class="node-port-handle in"></div>' +
+              '<span class="node-port-label">' +
+              port +
+              "</span>" +
+              "</div>"
+          )
+          .join("");
+
+        const portsOutHTML = (node.portsOut || [])
+          .map(
+            (port) =>
+              '<div class="node-port-container">' +
+              '<span class="node-port-label out">' +
+              port +
+              "</span>" +
+              '<div class="node-port-handle out"></div>' +
+              "</div>"
+          )
+          .join("");
+
+        el.innerHTML =
+          '<div class="node-base ' +
+          node.color +
+          '">' +
+          '<div class="node-header ' +
+          node.color +
+          '">' +
+          '<span data-lucide="' +
+          node.icon +
+          '" class="node-icon"></span>' +
+          '<span class="node-label">' +
+          node.label +
+          "</span>" +
+          "</div>" +
+          '<div class="node-body">' +
+          '<div class="node-ports-in">' +
+          portsInHTML +
+          "</div>" +
+          '<div class="node-ports-out">' +
+          portsOutHTML +
+          "</div>" +
+          "</div>" +
+          "</div>";
+
+        return el;
+      }
+
+      const storySteps = [
+        {
+          progress: 0,
+          title: "1. Start with your logic",
+          body:
+            "You already have a working flow: the <code>user</code> variable pipes straight into <code>print</code>. " +
+            "But how do you safely slot new behavior in the middle without breaking anything?",
+          action: () => {
+            storyNodeContainer.innerHTML = "";
+            ["user", "print"].forEach((id) => {
+              const node = createStoryNode(storyNodes[id]);
+              storyNodeContainer.appendChild(node);
+              setTimeout(() => {
+                node.style.opacity = "1";
+              }, 40);
+            });
+            setTimeout(() => {
+              drawWires(storySvg, storyWireDefs.w1);
+            }, 80);
+            storyPrompt.style.opacity = "0";
+            lucide.createIcons();
+          }
+        },
+        {
+          progress: 0.33,
+          title: "2. Prompt the canvas in-place",
+          body:
+            "Instead of editing raw code, you talk to the graph. " +
+            "Select a wire and tell Small what you want to happen between these two nodes.",
+          action: () => {
+            storyPrompt.style.opacity = "1";
+            const wire = storySvg.querySelector("path");
+            if (wire) {
+              wire.setAttribute("stroke", "#3b82f6");
+              wire.setAttribute("stroke-width", "3");
+            }
+          }
+        },
+        {
+          progress: 0.66,
+          title: "3. Small refactors and rewires safely",
+          body:
+            "Small’s AI engine inserts <code>build_message</code>, rewires the dataflow, and shows you the new path at a glance. " +
+            "Your change is scoped, reviewable, and ready to ship.",
+          action: () => {
+            storyPrompt.style.opacity = "0";
+
+            const newNode = createStoryNode(storyNodes["build_msg"]);
+            storyNodeContainer.appendChild(newNode);
+
+            setTimeout(() => {
+              newNode.style.opacity = "1";
+              drawWires(storySvg, storyWireDefs.w_new);
+            }, 600);
+            lucide.createIcons();
+          }
+        }
+      ];
+
+      let currentStoryStep = -1;
+
+      window.addEventListener("scroll", () => {
+        const rect = featuresSection.getBoundingClientRect();
+        const vh = window.innerHeight;
+
+        if (rect.top <= 0 && rect.bottom >= vh) {
+          const scrollDist = -rect.top;
+          const totalScroll = featuresSection.clientHeight - vh;
+          let progress = scrollDist / totalScroll;
+          progress = Math.max(0, Math.min(1, progress));
+
+          let nextStep = 0;
+          for (let i = 0; i < storySteps.length; i++) {
+            if (progress >= storySteps[i].progress) {
+              nextStep = i;
+            }
+          }
+
+          if (nextStep !== currentStoryStep) {
+            currentStoryStep = nextStep;
+            const step = storySteps[currentStoryStep];
+
+            storyTitle.style.opacity = "0";
+            storyBody.style.opacity = "0";
+
+            setTimeout(() => {
+              storyTitle.textContent = step.title;
+              storyBody.innerHTML = step.body;
+              storyTitle.style.opacity = "1";
+              storyBody.style.opacity = "1";
+            }, 250);
+
+            step.action();
+          }
+        }
+      });
+
+      // Initial state
+      storySteps[0].action();
+      storyTitle.textContent = storySteps[0].title;
+      storyBody.innerHTML = storySteps[0].body;
+    });
+  </script>
+</body>
+</html>
