@@ -92,11 +92,40 @@
       transform: rotateY(180deg);
     }
 
-    /* Node styles rewritten without @apply so it works with CDN Tailwind */
+    /* --- Draggable Graph Styles --- */
+    .graph-viewport {
+      cursor: grab;
+      overflow: hidden;
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .graph-viewport:active {
+      cursor: grabbing;
+    }
+    .graph-canvas {
+      width: 200%; 
+      height: 200%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-origin: center center;
+      will-change: transform;
+      position: relative;
+    }
+
+    /* --- Node System Styles --- */
     .node-wrapper {
       position: relative;
       transition: all 0.7s ease-in-out;
       z-index: 10;
+    }
+    
+    /* Helper for absolute positioning in hero graph */
+    .node-absolute {
+        position: absolute;
+        left: 50%;
+        top: 50%;
     }
 
     .node-base {
@@ -107,8 +136,7 @@
       border-style: solid;
       border-color: #475569;
       box-shadow: 0 10px 40px rgba(15, 23, 42, 0.8);
-      min-width: 200px;
-      overflow: hidden;
+      min-width: 220px;
     }
 
     .node-header {
@@ -193,14 +221,13 @@
       padding-right: 1.25rem;
     }
 
+    /* Node Themes */
     .node-color-blue {
       border-color: #3b82f6;
     }
-
     .node-color-blue .node-header {
       border-color: #3b82f6;
     }
-
     .node-color-blue .node-icon {
       color: #60a5fa;
     }
@@ -208,11 +235,9 @@
     .node-color-orange {
       border-color: #f97316;
     }
-
     .node-color-orange .node-header {
       border-color: #f97316;
     }
-
     .node-color-orange .node-icon {
       color: #fdba74;
     }
@@ -220,11 +245,9 @@
     .node-color-green {
       border-color: #22c55e;
     }
-
     .node-color-green .node-header {
       border-color: #22c55e;
     }
-
     .node-color-green .node-icon {
       color: #4ade80;
     }
@@ -232,24 +255,12 @@
     .node-color-slate {
       border-color: #475569;
     }
-
     .node-color-slate .node-header {
       border-color: #475569;
     }
-
     .node-color-slate .node-icon {
       color: #64748b;
     }
-
-    /*
-      REMOVED: Media queries for #features height.
-      Setting height: 'auto' or '220vh' breaks the
-      scroll-based animation, which relies on the
-      parent (#features) having a large, fixed scroll
-      height (300vh) to move the 'sticky' panel against.
-      The sticky panel itself is 'h-screen' and will
-      behave correctly on all screen sizes.
-    */
   </style>
 </head>
 <body class="antialiased">
@@ -372,175 +383,173 @@ message = <span class="text-blue-400">build_message</span>(user)
 </code></pre>
           </div>
 
-          <!-- Back: Graph -->
+          <!-- Back: Graph (RESTORED DRAGGABLE + ABSOLUTE NODES) -->
           <div
-            class="absolute w-full h-full flip-card-back bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-xl overflow-hidden shadow-2xl p-6 hero-grid"
+            class="absolute w-full h-full flip-card-back bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-xl overflow-hidden shadow-2xl p-0"
           >
-            <!-- SVG wires -->
-            <svg
-              class="absolute inset-0 w-full h-full z-0"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              id="svg-wires"
-            ></svg>
+            <!-- Draggable Viewport -->
+            <div id="hero-graph-viewport" class="graph-viewport">
+                <div id="hero-graph-canvas" class="graph-canvas">
+                    
+                    <!-- EDGES LAYER (SVG) - RESTORED STATIC -->
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none overflow-visible" style="z-index: 0; transform: translate(calc(50% + 5px), calc(50% + 15px));">
+                        <defs>
+                            <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto">
+                                <path d="M0,0 L0,10 L10,5 z" fill="#64748b" />
+                            </marker>
+                        </defs>
+                        
+                        <!-- 1. CALL get_user -> VARIABLE user -->
+                        <path d="M-280,105 C-253,105 -253,105 -226,105" fill="none" stroke="#64748b" stroke-width="2" />
+                        
+                        <!-- 2. VARIABLE user -> IF block -->
+                        <path d="M0,105 C27,105 27,25 54,25" fill="none" stroke="#64748b" stroke-width="2" />
+                        
+                        <!-- 3. VARIABLE user -> CALL build_message -->
+                        <path d="M0,105 C27,105 27,185 54,185" fill="none" stroke="#f59e0b" stroke-width="3" />
+                        
+                        <!-- 4. CALL build_message -> VARIABLE message -->
+                        <path d="M280,185 C307,185 307,185 334,185" fill="none" stroke="#64748b" stroke-width="2" />
+                        
+                        <!-- 5. VARIABLE message -> CALL print -->
+                        <path d="M560,185 C587,185 587,185 614,185" fill="none" stroke="#f59e0b" stroke-width="2" />
+                    </svg>
 
-            <!-- Nodes -->
-            <div
-              id="node-container-hero"
-              class="relative w-full h-full z-10 grid grid-cols-1 md:grid-cols-5 grid-rows-5 md:grid-rows-3 gap-4 md:gap-x-8 md:gap-y-8 items-center justify-items-center content-center"
-            >
-              <!-- Row 1 -->
-              <div id="node-requests" class="node-wrapper md:col-start-1 md:row-start-1">
-                <div class="node-base node-color-slate">
-                  <div class="node-header node-color-slate">
-                    <span data-lucide="file-text" class="node-icon"></span>
-                    <span class="node-label">import requests</span>
-                  </div>
-                  <div class="node-body">
-                    <div class="node-ports-out">
-                      <div class="node-port-container">
-                        <div class="node-port-handle out" data-port-name="out"></div>
-                      </div>
+                    <!-- NODES LAYER (HTML) - UPDATED TO NEW STYLE BUT ABSOLUTE POSITION -->
+                    
+                    <!-- 1. CALL get_user -->
+                    <div class="node-wrapper node-absolute" style="transform: translate(-500px, 60px);">
+                        <div class="node-base node-color-orange">
+                            <div class="node-header node-color-orange">
+                                <span data-lucide="activity" class="node-icon"></span>
+                                <span class="node-label">get_user</span>
+                            </div>
+                            <div class="node-body">
+                                <div class="node-ports-in">
+                                     <div class="node-port-container">
+                                        <div class="node-port-handle in"></div>
+                                        <span class="node-port-label">1</span>
+                                    </div>
+                                </div>
+                                <div class="node-ports-out">
+                                    <div class="node-port-container">
+                                        <span class="node-port-label out">return</span>
+                                        <div class="node-port-handle out"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                  </div>
+
+                    <!-- 2. VARIABLE user -->
+                    <div class="node-wrapper node-absolute" style="transform: translate(-220px, 60px);">
+                        <div class="node-base node-color-green">
+                            <div class="node-header node-color-green">
+                                <span data-lucide="database" class="node-icon"></span>
+                                <span class="node-label">user</span>
+                            </div>
+                            <div class="node-body">
+                                <div class="node-ports-in">
+                                    <div class="node-port-container">
+                                        <div class="node-port-handle in !bg-blue-500 !border-slate-500"></div>
+                                        <span class="node-port-label italic text-slate-500">[Wired]</span>
+                                    </div>
+                                </div>
+                                <div class="node-ports-out">
+                                    <div class="node-port-container">
+                                        <span class="node-port-label out">value</span>
+                                        <div class="node-port-handle out"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. IF BLOCK -->
+                    <div class="node-wrapper node-absolute" style="transform: translate(60px, -20px);">
+                        <div class="node-base node-color-slate" style="border-color: #f97316;">
+                            <div class="node-header" style="border-color: #f97316;">
+                                <span data-lucide="git-branch" class="node-icon" style="color: #f97316;"></span>
+                                <span class="node-label">if user</span>
+                            </div>
+                            <div class="node-body">
+                                <div class="node-ports-in">
+                                    <div class="node-port-container">
+                                        <div class="node-port-handle in"></div>
+                                        <span class="node-port-label italic text-slate-500">[Wired]</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. CALL build_message -->
+                    <div class="node-wrapper node-absolute" style="transform: translate(60px, 140px);">
+                        <div class="node-base node-color-orange">
+                            <div class="node-header node-color-orange">
+                                <span data-lucide="activity" class="node-icon"></span>
+                                <span class="node-label">build_message</span>
+                            </div>
+                            <div class="node-body">
+                                <div class="node-ports-in">
+                                    <div class="node-port-container">
+                                        <div class="node-port-handle in !bg-blue-500"></div>
+                                        <span class="node-port-label italic text-slate-500">[Wired]</span>
+                                    </div>
+                                </div>
+                                <div class="node-ports-out">
+                                    <div class="node-port-container">
+                                        <span class="node-port-label out">return</span>
+                                        <div class="node-port-handle out"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- 5. VARIABLE message -->
+                    <div class="node-wrapper node-absolute" style="transform: translate(340px, 140px);">
+                        <div class="node-base node-color-green">
+                            <div class="node-header node-color-green">
+                                <span data-lucide="database" class="node-icon"></span>
+                                <span class="node-label">message</span>
+                            </div>
+                            <div class="node-body">
+                                <div class="node-ports-in">
+                                    <div class="node-port-container">
+                                        <div class="node-port-handle in"></div>
+                                        <span class="node-port-label italic text-slate-500">[Wired]</span>
+                                    </div>
+                                </div>
+                                <div class="node-ports-out">
+                                    <div class="node-port-container">
+                                        <span class="node-port-label out">value</span>
+                                        <div class="node-port-handle out"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6. CALL print -->
+                    <div class="node-wrapper node-absolute" style="transform: translate(620px, 140px);">
+                         <div class="node-base node-color-orange">
+                            <div class="node-header node-color-orange">
+                                <span data-lucide="activity" class="node-icon"></span>
+                                <span class="node-label">print</span>
+                            </div>
+                            <div class="node-body">
+                                <div class="node-ports-in">
+                                    <div class="node-port-container">
+                                        <div class="node-port-handle in !bg-blue-500"></div>
+                                        <span class="node-port-label italic text-slate-500">[Wired]</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-              </div>
-
-              <div id="node-def-get-user" class="node-wrapper md:col-start-2 md:col-span-2 md:row-start-1">
-                <div class="node-base node-color-blue">
-                  <div class="node-header node-color-blue">
-                    <span data-lucide="box" class="node-icon"></span>
-                    <span class="node-label">def get_user</span>
-                  </div>
-                  <div class="node-body">
-                    <div class="node-ports-out">
-                      <div class="node-port-container">
-                        <div class="node-port-handle out" data-port-name="out"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div id="node-def-build-msg" class="node-wrapper md:col-start-4 md:col-span-2 md:row-start-1">
-                <div class="node-base node-color-blue">
-                  <div class="node-header node-color-blue">
-                    <span data-lucide="box" class="node-icon"></span>
-                    <span class="node-label">def build_message</span>
-                  </div>
-                  <div class="node-body">
-                    <div class="node-ports-out">
-                      <div class="node-port-container">
-                        <div class="node-port-handle out" data-port-name="out"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Row 2 -->
-              <div id="node-literal-1" class="node-wrapper md:col-start-1 md:row-start-2">
-                <div class="node-base node-color-slate" style="min-width:80px;">
-                  <div class="node-header node-color-slate justify-center">
-                    <span class="node-label">1</span>
-                  </div>
-                  <div class="node-body">
-                    <div class="node-ports-out">
-                      <div class="node-port-container">
-                        <span class="node-port-label out">value</span>
-                        <div class="node-port-handle out"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div id="node-call-get-user" class="node-wrapper md:col-start-2 md:row-start-2">
-                <div class="node-base node-color-orange">
-                  <div class="node-header node-color-orange">
-                    <span data-lucide="activity" class="node-icon"></span>
-                    <span class="node-label">get_user</span>
-                  </div>
-                  <div class="node-body">
-                    <div class="node-ports-in">
-                      <div class="node-port-container">
-                        <div class="node-port-handle in"></div>
-                        <span class="node-port-label">user_id</span>
-                      </div>
-                    </div>
-                    <div class="node-ports-out">
-                      <div class="node-port-container">
-                        <span class="node-port-label out">return</span>
-                        <div class="node-port-handle out"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div id="node-var-user" class="node-wrapper md:col-start-3 md:row-start-2">
-                <div class="node-base node-color-green">
-                  <div class="node-header node-color-green">
-                    <span data-lucide="database" class="node-icon"></span>
-                    <span class="node-label">user</span>
-                  </div>
-                  <div class="node-body">
-                    <div class="node-ports-in">
-                      <div class="node-port-container">
-                        <div class="node-port-handle in"></div>
-                        <span class="node-port-label">input</span>
-                      </div>
-                    </div>
-                    <div class="node-ports-out">
-                      <div class="node-port-container">
-                        <span class="node-port-label out">value</span>
-                        <div class="node-port-handle out"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div id="node-call-build-msg" class="node-wrapper md:col-start-4 md:row-start-2">
-                <div class="node-base node-color-orange">
-                  <div class="node-header node-color-orange">
-                    <span data-lucide="activity" class="node-icon"></span>
-                    <span class="node-label">build_message</span>
-                  </div>
-                  <div class="node-body">
-                    <div class="node-ports-in">
-                      <div class="node-port-container">
-                        <div class="node-port-handle in"></div>
-                        <span class="node-port-label">user_data</span>
-                      </div>
-                    </div>
-                    <div class="node-ports-out">
-                      <div class="node-port-container">
-                        <span class="node-port-label out">return</span>
-                        <div class="node-port-handle out"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div id="node-call-print" class="node-wrapper md:col-start-5 md:row-start-2">
-                <div class="node-base node-color-orange">
-                  <div class="node-header node-color-orange">
-                    <span data-lucide="activity" class="node-icon"></span>
-                    <span class="node-label">print</span>
-                  </div>
-                  <div class="node-body">
-                    <div class="node-ports-in">
-                      <div class="node-port-container">
-                        <div class="node-port-handle in"></div>
-                        <span class="node-port-label">arg0</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
         </div>
@@ -583,31 +592,36 @@ message = <span class="text-blue-400">build_message</span>(user)
             </div>
           </aside>
 
-          <!-- Canvas Panel -->
+          <!-- Canvas Panel (Now Draggable) -->
           <section
-            class="w-full lg:w-2/3 relative hero-grid p-6 h-2/3 lg:h-full"
-            id="story-canvas"
+            class="w-full lg:w-2/3 relative bg-slate-950 p-0 h-2/3 lg:h-full overflow-hidden"
             aria-label="Dataflow canvas"
           >
-            <svg
-              id="story-svg"
-              class="absolute inset-0 w-full h-full z-0"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            ></svg>
-            <div
-              id="story-node-container"
-              class="relative w-full h-full z-10 grid grid-cols-1 lg:grid-cols-3 items-center gap-x-8 gap-y-8 justify-items-center content-center"
-            ></div>
+             <!-- Viewport for Dragging -->
+             <div id="story-graph-viewport" class="graph-viewport hero-grid">
+                <!-- Draggable Canvas -->
+                <div id="story-graph-canvas" class="graph-canvas">
+                    <svg
+                      id="story-svg"
+                      class="absolute inset-0 w-full h-full z-0"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    ></svg>
+                    <div
+                      id="story-node-container"
+                      class="relative w-full h-full z-10 grid grid-cols-1 lg:grid-cols-[auto_auto_auto] justify-center items-center gap-x-12 gap-y-8 content-center"
+                    ></div>
 
-            <!-- Floating Prompt -->
-            <div
-              id="story-prompt"
-              class="absolute bg-blue-600/20 border border-blue-500 px-3 py-2 rounded-lg shadow-lg text-xs sm:text-sm z-20 pointer-events-none"
-              style="opacity:0;transition:all .5s ease;left:50%;top:75%;transform:translateX(-50%);"
-            >
-              <span class="font-mono text-blue-300">"Add the build_message step here"</span>
-            </div>
+                    <!-- Floating Prompt (Inside canvas so it drags with nodes) -->
+                    <div
+                      id="story-prompt"
+                      class="absolute bg-blue-600/20 border border-blue-500 px-3 py-2 rounded-lg shadow-lg text-xs sm:text-sm z-20 pointer-events-none"
+                      style="opacity:0;transition:all .5s ease;left:50%;top:60%;transform:translateX(-50%);"
+                    >
+                      <span class="font-mono text-blue-300">"Add the build_message step here"</span>
+                    </div>
+                </div>
+             </div>
           </section>
         </div>
       </div>
@@ -621,11 +635,10 @@ message = <span class="text-blue-400">build_message</span>(user)
     >
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 id="waitlist-heading" class="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
-          From idea to execution, instantly.
+          Leave the vibes. Keep the velocity.
         </h2>
         <p class="mt-6 text-lg text-slate-400">
-          Small cuts the time it takes to understand and refactor complex code.
-          Join the private beta to build faster with radical clarity.
+          You like the speed of AI coding, but hate the mess. "Small" gives you both: rapid generation with strict architectural control.
         </p>
         <form
           class="mt-10 flex flex-col sm:flex-row gap-4 max-w-md mx-auto"
@@ -644,9 +657,9 @@ message = <span class="text-blue-400">build_message</span>(user)
           />
           <button
             type="submit"
-            class="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-500 btn-glow transition-all"
+            class="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-500 btn-glow transition-all active:scale-95 transform"
           >
-            Request access
+            Join Waitlist
           </button>
         </form>
         <p class="mt-4 text-xs text-slate-500">
@@ -698,103 +711,71 @@ message = <span class="text-blue-400">build_message</span>(user)
       const flipButtonText = document.getElementById("flip-button-text");
       const headlineProblem = document.getElementById("headline-problem");
       const headlineSolution = document.getElementById("headline-solution");
-      const svgHeroWires = document.getElementById("svg-wires");
 
-      let isFlipped = false;
-      let hasAutoFlipped = false; // NEW: State for scroll listener
+      // --- Reusable Draggable Logic ---
+      function setupDraggableCanvas(viewportId, canvasId) {
+        const viewport = document.getElementById(viewportId);
+        const canvas = document.getElementById(canvasId);
+        
+        if (!viewport || !canvas) return;
 
-      function getPortPos(container, nodeId, portSide, portLabel) {
-        const el = document.getElementById(nodeId);
-        const svgRect = container.getBoundingClientRect();
-        if (!el || !svgRect || svgRect.width === 0) return null;
+        let isDragging = false;
+        let startX, startY;
+        let currentX = 0;
+        let currentY = 0;
 
-        const rect = el.getBoundingClientRect();
-
-        let portEl = null;
-        if (portLabel) {
-          const portLabels = el.querySelectorAll(
-            ".node-port-label" + (portSide === "in" ? "" : ".out")
-          );
-          portLabels.forEach((labelEl) => {
-            if (labelEl.textContent.trim() === portLabel) {
-              portEl = labelEl.previousElementSibling || labelEl.nextElementSibling;
-            }
-          });
+        // Initialize center position on load
+        function centerCanvas() {
+            const vpRect = viewport.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            // Calculate center offset
+            // We want canvas center to match viewport center
+            // Since canvas is 200% width/height, we simply shift by half the difference
+            currentX = -(canvasRect.width - vpRect.width) / 2;
+            currentY = -(canvasRect.height - vpRect.height) / 2;
+            
+            canvas.style.transform = `translate(${currentX}px, ${currentY}px)`;
         }
+        
+        // Call immediately and slightly delayed to handle layout
+        centerCanvas();
+        setTimeout(centerCanvas, 100);
 
-        if (!portEl) {
-          portEl = el.querySelector(".node-port-handle." + portSide);
-        }
+        viewport.addEventListener("mousedown", (e) => {
+          isDragging = true;
+          startX = e.clientX - currentX;
+          startY = e.clientY - currentY;
+          viewport.style.cursor = "grabbing";
+        });
 
-        if (portEl) {
-          const portRect = portEl.getBoundingClientRect();
-          return {
-            x: portRect.left + portRect.width / 2 - svgRect.left,
-            y: portRect.top + portRect.height / 2 - svgRect.top
-          };
-        }
-
-        return {
-          x: (portSide === "in" ? rect.left : rect.right) - svgRect.left,
-          y: rect.top + rect.height / 2 - svgRect.top
-        };
-      }
-
-      function drawWires(svgContainer, wireDefs) {
-        if (!svgContainer) return;
-        svgContainer.innerHTML = "";
-
-        wireDefs.forEach((wire) => {
-          const p1 = getPortPos(svgContainer, wire.from, wire.fromPort || "out", wire.fromLabel);
-          const p2 = getPortPos(svgContainer, wire.to, wire.toPort || "in", wire.toLabel);
-
-          if (!p1 || !p2) {
-            console.warn("Could not draw wire:", wire.from, "->", wire.to);
-            return;
+        window.addEventListener("mouseup", () => {
+          if (isDragging) {
+             isDragging = false;
+             viewport.style.cursor = "grab";
           }
+        });
 
-          const midX = p1.x + (p2.x - p1.x) / 2;
-          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          path.setAttribute(
-            "d",
-            "M " +
-              p1.x +
-              " " +
-              p1.y +
-              " C " +
-              midX +
-              " " +
-              p1.y +
-              ", " +
-              midX +
-              " " +
-              p2.y +
-              ", " +
-              p2.x +
-              " " +
-              p2.y
-          );
-          path.setAttribute("stroke", wire.color || "#64748b");
-          path.setAttribute("stroke-width", "2");
-          path.setAttribute("fill", "none");
-          path.style.opacity = "0";
-          path.style.transition = "opacity 0.3s";
-          svgContainer.appendChild(path);
-          setTimeout(() => {
-            path.style.opacity = "1";
-          }, 40);
+        window.addEventListener("mousemove", (e) => {
+          if (!isDragging) return;
+          e.preventDefault();
+          
+          currentX = e.clientX - startX;
+          currentY = e.clientY - startY;
+          
+          canvas.style.transform = `translate(${currentX}px, ${currentY}px)`;
         });
       }
 
-      const heroWireDefs = [
-        { from: "node-literal-1", fromLabel: "value", to: "node-call-get-user", toLabel: "user_id" },
-        { from: "node-call-get-user", fromLabel: "return", to: "node-var-user", toLabel: "input" },
-        { from: "node-var-user", fromLabel: "value", to: "node-call-build-msg", toLabel: "user_data" },
-        { from: "node-call-build-msg", fromLabel: "return", to: "node-call-print", toLabel: "arg0" },
-        { from: "node-requests", to: "node-call-get-user", toLabel: "user_id" },
-        { from: "node-def-get-user", to: "node-call-get-user", toLabel: "user_id" },
-        { from: "node-def-build-msg", to: "node-call-build-msg", toLabel: "user_data" }
-      ];
+      // Init Draggables for both canvases
+      setupDraggableCanvas('hero-graph-viewport', 'hero-graph-canvas');
+      setupDraggableCanvas('story-graph-viewport', 'story-graph-canvas');
+
+      
+      // --- End Draggable Logic ---
+
+      let isFlipped = false;
+      let hasAutoFlipped = false; // NEW: State for scroll listener
 
       // NEW: Abstracted flip logic into its own function
       function doFlip() {
@@ -807,10 +788,6 @@ message = <span class="text-blue-400">build_message</span>(user)
         headlineProblem.style.transform = "translateY(1rem)";
         headlineSolution.style.opacity = "1";
         headlineSolution.style.transform = "translateY(0)";
-
-        requestAnimationFrame(() => {
-          setTimeout(() => drawWires(svgHeroWires, heroWireDefs), 60);
-        });
       }
 
       // NEW: Function to flip back (manual only)
@@ -824,7 +801,6 @@ message = <span class="text-blue-400">build_message</span>(user)
         headlineProblem.style.transform = "translateY(0)";
         headlineSolution.style.opacity = "0";
         headlineSolution.style.transform = "translateY(-1rem)";
-        svgHeroWires.innerHTML = "";
       }
 
       flipButton.addEventListener("click", () => {
@@ -853,7 +829,7 @@ message = <span class="text-blue-400">build_message</span>(user)
       
       window.addEventListener("scroll", onFirstScroll, { passive: true });
 
-      // --- 2. Scroll story logic ---
+      // --- 2. Scroll story logic (Dynamic Wires Logic preserved for Story Section) ---
       const featuresSection = document.getElementById("features");
       const storyTitle = document.getElementById("story-title");
       const storyBody = document.getElementById("story-body");
@@ -917,6 +893,78 @@ message = <span class="text-blue-400">build_message</span>(user)
           }
         ]
       };
+      
+      // Helper func needed for Story mode dynamic drawing
+      function getStoryPortPos(container, nodeId, portSide, portLabel) {
+        const el = document.getElementById(nodeId);
+        const svgRect = container.getBoundingClientRect();
+        if (!el || !svgRect || svgRect.width === 0) return null;
+
+        let portEl = null;
+
+        // 1. Try finding by label text to get exact port handle
+        if (portLabel) {
+            const labels = Array.from(el.querySelectorAll(".node-port-label"));
+            const targetLabel = labels.find(l => l.textContent.trim() === portLabel);
+            if (targetLabel) {
+                // In-port: handle is before label. Out-port: handle is after label.
+                if (portSide === 'in') {
+                    portEl = targetLabel.previousElementSibling;
+                } else {
+                    portEl = targetLabel.nextElementSibling;
+                }
+            }
+        }
+
+        // 2. Fallback: Find generic handle for the side
+        if (!portEl) {
+             portEl = el.querySelector(`.node-port-handle.${portSide}`);
+        }
+
+        if (portEl) {
+            const portRect = portEl.getBoundingClientRect();
+            return {
+                x: portRect.left + portRect.width / 2 - svgRect.left,
+                y: portRect.top + portRect.height / 2 - svgRect.top
+            };
+        }
+
+        // 3. Fallback to node edge center
+        const rect = el.getBoundingClientRect();
+        return {
+            x: (portSide === "in" ? rect.left : rect.right) - svgRect.left,
+            y: rect.top + rect.height/2 - svgRect.top
+        };
+      }
+
+      function drawWires(svgContainer, wireDefs) {
+        if (!svgContainer) return;
+        svgContainer.innerHTML = "";
+
+        wireDefs.forEach((wire) => {
+          // Pass labels to ensure we connect to the correct specific dot
+          const p1 = getStoryPortPos(svgContainer, wire.from, "out", wire.fromLabel);
+          const p2 = getStoryPortPos(svgContainer, wire.to, "in", wire.toLabel);
+
+          if (!p1 || !p2) return;
+
+          const midX = p1.x + (p2.x - p1.x) / 2;
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute(
+            "d",
+            "M " + p1.x + " " + p1.y + " C " + midX + " " + p1.y + ", " + midX + " " + p2.y + ", " + p2.x + " " + p2.y
+          );
+          path.setAttribute("stroke", wire.color || "#64748b");
+          path.setAttribute("stroke-width", "2");
+          path.setAttribute("fill", "none");
+          path.style.opacity = "0";
+          path.style.transition = "opacity 0.3s";
+          svgContainer.appendChild(path);
+          setTimeout(() => {
+            path.style.opacity = "1";
+          }, 40);
+        });
+      }
 
       function createStoryNode(node) {
         const el = document.createElement("div");
